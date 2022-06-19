@@ -4,7 +4,7 @@
 //
 //  Created by Jacek Placek on 19/06/2022.
 //
-
+import Combine
 import SwiftUI
 
 struct User: Decodable {
@@ -19,7 +19,13 @@ struct ContentView: View {
     var body: some View {
         Button("Fetch Data") {
             let url = URL(string: "https://www.hackingwithswift.com/samples/user-24601.json")!
-            self.fetch(url)
+            self.fetch(url, defaultValue: User.default) {
+                print($0.name)
+                
+                
+                
+                
+            }
         }
     }
     
@@ -41,16 +47,31 @@ struct ContentView: View {
 //    }
     
     
-    func fetch(_ url: URL) {
+//    func fetch(_ url: URL) {
+//        let decoder = JSONDecoder()
+//
+//
+//        URLSession.shared.dataTaskPublisher(for: url)
+//            .map(\.data)
+//            .decode(type: User.self, decoder: decoder)
+//            .replaceError(with: User.default)
+//            .sink(receiveValue: { print($0.name) })
+//            .store(in: &requests)
+//    }
+    
+    func fetch<T: Decodable>(_ url: URL, defaultValue: T, completion: @escaping (T) -> Void) {
         let decoder = JSONDecoder()
 
-       
         URLSession.shared.dataTaskPublisher(for: url)
+            .retry(1)
             .map(\.data)
-            .decode(type: User.self, decoder: decoder)
-            .replaceError(with: User.default)
-            .sink(receiveValue: { print($0.name) })
+            .decode(type: T.self, decoder: decoder)
+            .replaceError(with: defaultValue)
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: completion)
             .store(in: &requests)
+        
+        
     }
 }
 
